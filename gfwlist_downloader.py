@@ -4,6 +4,8 @@ from github import Github
 import os
 from datetime import datetime
 
+FILENAME = "gfwlist.txt"  # Constant filename
+
 def download_and_decode_gfwlist(url):
     response = requests.get(url)
     response.raise_for_status()
@@ -19,12 +21,8 @@ def main():
         gfwlist_content = download_and_decode_gfwlist(gfwlist_url)
         print("GFWList downloaded and decoded successfully")
         
-        # Generate a unique filename with timestamp
-        current_date = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        filename = f"gfwlist_{current_date}.txt"
-        
-        # Save content to a file
-        with open(filename, "w", encoding="utf-8") as f:
+        # Save content to a file with the constant filename
+        with open(FILENAME, "w", encoding="utf-8") as f:
             f.write(gfwlist_content)
         
         # Upload to GitHub release
@@ -37,9 +35,15 @@ def main():
         releases = list(repo.get_releases())
         if releases:
             release = releases[0]
-            release.upload_asset(filename)
-            print(f"GFWList uploaded to the latest release as {filename}")
+            # Check if asset already exists and delete it
+            for asset in release.get_assets():
+                if asset.name == FILENAME:
+                    asset.delete_asset()
+                    print(f"Existing {FILENAME} asset deleted")
+            release.upload_asset(FILENAME)
+            print(f"GFWList uploaded to the latest release as {FILENAME}")
         else:
+            current_date = datetime.now().strftime("%Y-%m-%d")
             release = repo.create_git_release(
                 tag="latest",
                 name=f"Latest GFWList - {current_date}",
@@ -47,11 +51,11 @@ def main():
                 draft=False,
                 prerelease=False
             )
-            release.upload_asset(filename)
-            print(f"New release created with GFWList as {filename}")
+            release.upload_asset(FILENAME)
+            print(f"New release created with GFWList as {FILENAME}")
         
         # Clean up the local file
-        os.remove(filename)
+        os.remove(FILENAME)
         
     except Exception as e:
         print(f"An error occurred: {e}")
