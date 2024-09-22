@@ -8,7 +8,6 @@ def download_and_decode_gfwlist(url):
     response = requests.get(url)
     response.raise_for_status()
     encoded_content = response.text.strip()
-    # Remove newlines from the encoded content
     encoded_content = encoded_content.replace('\n', '')
     decoded_content = base64.b64decode(encoded_content).decode('utf-8')
     return decoded_content
@@ -20,8 +19,12 @@ def main():
         gfwlist_content = download_and_decode_gfwlist(gfwlist_url)
         print("GFWList downloaded and decoded successfully")
         
+        # Generate a unique filename with timestamp
+        current_date = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        filename = f"gfwlist_{current_date}.txt"
+        
         # Save content to a file
-        with open("gfwlist.txt", "w", encoding="utf-8") as f:
+        with open(filename, "w", encoding="utf-8") as f:
             f.write(gfwlist_content)
         
         # Upload to GitHub release
@@ -34,10 +37,9 @@ def main():
         releases = list(repo.get_releases())
         if releases:
             release = releases[0]
-            release.upload_asset("gfwlist.txt")
-            print("GFWList uploaded to the latest release")
+            release.upload_asset(filename)
+            print(f"GFWList uploaded to the latest release as {filename}")
         else:
-            current_date = datetime.now().strftime("%Y-%m-%d")
             release = repo.create_git_release(
                 tag="latest",
                 name=f"Latest GFWList - {current_date}",
@@ -45,8 +47,11 @@ def main():
                 draft=False,
                 prerelease=False
             )
-            release.upload_asset("gfwlist.txt")
-            print("New release created with GFWList")
+            release.upload_asset(filename)
+            print(f"New release created with GFWList as {filename}")
+        
+        # Clean up the local file
+        os.remove(filename)
         
     except Exception as e:
         print(f"An error occurred: {e}")
