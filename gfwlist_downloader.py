@@ -2,6 +2,7 @@ import requests
 import base64
 from github import Github
 import os
+from datetime import datetime
 
 def download_and_decode_gfwlist(url):
     response = requests.get(url)
@@ -36,10 +37,11 @@ def main():
             release.upload_asset("gfwlist.txt")
             print("GFWList uploaded to the latest release")
         else:
-            release = repo.create_release(
-                "latest",
-                name="Latest GFWList",
-                body="Updated GFWList",
+            current_date = datetime.now().strftime("%Y-%m-%d")
+            release = repo.create_git_release(
+                tag="latest",
+                name=f"Latest GFWList - {current_date}",
+                message=f"Updated GFWList on {current_date}",
                 draft=False,
                 prerelease=False
             )
